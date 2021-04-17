@@ -17,7 +17,6 @@ return {
 	-- @return collidables table containing the handles to the objects in the Bump world.
 	bump_init = function(map, world)
 		local collidables = {}
-
 		for _, tileset in ipairs(map.tilesets) do
 			for _, tile in ipairs(tileset.tiles) do
 				local gid = tileset.firstgid + tile.id
@@ -68,7 +67,10 @@ return {
 
 		for _, layer in ipairs(map.layers) do
 			-- Entire layer
-			if layer.properties.collidable == true then
+
+
+		  if layer.properties.collidable == true then
+print("COLLIDABLE LAYER: " .. layer.name )
 				if layer.type == "tilelayer" then
 					for y, tiles in ipairs(layer.data) do
 						for x, tile in pairs(tiles) do
@@ -112,6 +114,10 @@ return {
 					world:add(layer, layer.x, layer.y, layer.width, layer.height)
 					table.insert(collidables, layer)
 				end
+		  
+		  else
+		  	print("NOT COLLIDABLE: " .. layer.name )
+
 		  end
 
 			-- individual collidable objects in a layer that is not "collidable"

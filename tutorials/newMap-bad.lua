@@ -13,34 +13,9 @@ return {
   properties = {},
   tilesets = {
     {
-      firstgid = 0,
-      version = "1.5",
-      luaversion = "5.1",
-      tiledversion = "1.5.0",
       name = "!CL_DEMO_32x32",
-      tilewidth = 32,
-      tileheight = 32,
-      spacing = 0,
-      margin = 0,
-      columns = 40,
-      image = "!CL_DEMO_32x32.png",
-      imagewidth = 1280,
-      imageheight = 544,
-      transparentcolor = "#55007f",
-      objectalignment = "unspecified",
-      tileoffset = {
-        x = 0,
-        y = 0
-      },
-      grid = {
-        orientation = "orthogonal",
-        width = 32,
-        height = 32
-      },
-      properties = {},
-      wangsets = {},
-      tilecount = 680,
-      tiles = {}
+      firstgid = 1,
+      filename = "../practice/practice.tsx"
     }
   },
   layers = {
@@ -97,7 +72,9 @@ return {
       offsety = 0,
       parallaxx = 1,
       parallaxy = 1,
-      properties = {},
+      properties = {
+        ["collidable"] = false
+      },
       encoding = "lua",
       data = {
         0, 0, 0, 0, 0, 0, 88, 96, 97, 97, 97, 98, 90, 0, 0, 0, 0, 0, 0, 0,

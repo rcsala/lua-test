@@ -1,8 +1,13 @@
 -- Include Simple Tiled Implementation into project
 local inspect = require('inspect')
-local bump = require('bump')
-local world = bump.newWorld()
+--local world = bump.newWorld()
+--local map = sti("map.lua", {"bump"})
 local sti = require "sti"
+local bump = require 'bump'
+local world = bump.newWorld()
+
+local map = sti('newMap.lua', {"bump"})
+map: bump_init(world)
 
 -- require "debug"
 
@@ -10,29 +15,28 @@ function love.conf(t)
 	t.console = true
 end
 
-player = nil
+--player = nil
 
 function love.load()
   -- if arg[#arg] == "-debug" then require("mobdebug").start() end
-  
-  love._openConsole()
-    -- Load map file
-    map = sti("newMap.lua", {"bump"})
-    map:bump_init(world)
+    animation = newAnimation(love.graphics.newImage("Owlet_Monster_Run_6.png"), 32, 32, 1)
+    love._openConsole()
+    -- Load map file ~~~~~~~~~~ remove these
+    --map = sti("newMap.lua", {"bump"})
+    --map:bump_init(world)
     -- Create new dynamic data layer called "Sprites" as the 8th layer
     local layer = map:addCustomLayer("Sprites", 6)
+    
+
     -- get player spawn object
     for k, object in pairs(map.objects) do
         if object.name == "Player" then
-                print("PLAYER IS DEFINED")
                 player_init = true
                 player = object
-                world:add(player, player.x, player.y, player.width, player.height) -- x,y,width, height
-                print("ADDED" .. inspect(player))
+                world:add(player, player.x-0, player.y-0, player.width, player.height) -- x,y,width, height
             break
         end
     end
-
 
     -- create player object
     local sprite = love.graphics.newImage("sprite.png")
@@ -40,25 +44,12 @@ function love.load()
         sprite = sprite,
         x = player.x,
         y = player.y,
-        ox = sprite:getWidth() / 2,
-        oy = sprite:getHeight() / 1.35
+        ox = 0, -- sprite:getWidth() / 2,
+        oy = 0 -- sprite:getHeight() / 1.35
         }
         
-
--- stuff i put in because i dunno where it should go ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	
-
- -- love.graphics.setColor(255,255,255)
---[[
-    local waterA = {type="water"}
-    local waterB = {type="water"}
-
-    world:add(waterA, 8*32, 0, 3*32, 9*32)
-    world:add(waterB, 7*32, 11*32, 4*32, 8*32)
-]]--
     local playerFilter = function (item, other)
-        print("collide!@")
-    	if other.type == "water" then return 'touch'
+    	if other.layer.properties.collidable then return 'touch'
     	end
     end	
 
@@ -115,6 +106,29 @@ function love.load()
             love.graphics.setPointSize(5)
             love.graphics.points(math.floor(self.player.x), math.floor(self.player.y))
             --map:removeLayer("Spawn Point")
+
+            if world:hasItem(player) then
+                love.graphics.setColor(255,0,0)
+                love.graphics.rectangle('line', world:getRect(player))
+
+                for i,v in ipairs(map.bump_collidables) do 
+                    love.graphics.rectangle('line', world:getRect(v))
+                        -- if v.layer ~= nil then
+--                         for j,w in ipairs(v.layer.data) do
+-- -- print(inspect(w))
+--                             love.graphics.rectangle('line', world:getRect(w))
+--                             -- os.exit() 
+--                         end
+--                     end
+                    
+                end
+                
+
+                -- love.graphics.rectangle('line', world:getRect(waterA))
+                -- love.graphics.rectangle('line', world:getRect(waterB))
+                -- love.graphics.rectangle('line', world:getRect(cliffA))
+                -- love.graphics.rectangle('line', world:getRect(cliffB))
+            end
         end
     end
 end
@@ -122,7 +136,16 @@ end
 function love.update(dt)
     -- Update world
     map:update(dt)
+--update animationanimation.currentTime=animation.currentTime+dt
+    if animation.currentTime >= animation.duration then
+            animation.currentTime = animation.currentTime - animation.duration
+    end
 end
+
+   -- text??
+    local font = love.graphics.getFont()
+    --love.graphics.newText()
+    local plainText = love.graphics.newText(font, "hello world!")
 
 function love.draw()
 	--scale world
@@ -134,15 +157,18 @@ function love.draw()
     local tx = math.floor(player.x - screen_width/2)
     local ty = math.floor(player.y - screen_height/2)
 
+
     -- Draw world
     map:draw(-tx, -ty, scale)
 
-    if world:hasItem(player) then
-        love.graphics.setColor(255,0,0)
-        print("PLAYER IS BEING USED")
-        love.graphics.rectangle('line', world:getRect(player))
-    end
+    -- drawing my new sprite
+    local spriteNum = math.floor(animation.currentTime / animation.duration * #animation.quads) +1
+    love.graphics.draw(animation.spriteSheet, animation.quads[spriteNum])
+    font = love.graphics.newFont(14)
+    love.graphics.setFont(font)
+    love.graphics.print("Hello world", 10, 30)
 end
+
 
 --[[
 function love.keypressed(key, u)
@@ -152,3 +178,21 @@ function love.keypressed(key, u)
    end
 end
 ]]--
+
+function newAnimation(image, width, height, duration)
+   
+    local animation = {}
+        animation.spriteSheet = image;
+        animation.quads = {}
+
+        for y=0, image:getHeight() - height, height do
+            for x = 0, image:getWidth() - width, width do
+                table.insert(animation.quads, love.graphics.newQuad (x,y, width, height, image:getDimensions()))
+            end
+        end
+
+        animation.duration = duration or 1
+        animation.currentTime = 0
+
+        return animation
+    end
