@@ -1,15 +1,18 @@
--- Include Simple Tiled Implementation into project
+-- For example, use of the global environment from this scope.
+local _ENV = require 'std.strict' (_G)
+
+--- libraries
 local inspect = require('inspect')
---local world = bump.newWorld()
---local map = sti("map.lua", {"bump"})
 local sti = require "sti"
 local bump = require 'bump'
-local world = bump.newWorld()
 
+--- globals
+
+local world = bump.newWorld()
 local map = sti('newMap.lua', {"bump"})
 map: bump_init(world)
 
--- require "debug"
+--- defines
 
 local TILE_HEIGHT = 32
 local TILE_WIDTH = 32
@@ -17,6 +20,13 @@ local TILE_WIDTH = 32
 local SCALE = 2
 local SCREEN_WIDTH = love.graphics.getWidth()/SCALE
 local SCREEN_HEIGHT = love.graphics.getHeight()/SCALE
+
+--- variables
+local player_init = false
+local player = false;
+local font = love.graphics.newFont(28)
+
+--- functions
 
 function get_player()
     return map.layers["Sprites"].player
@@ -27,34 +37,32 @@ function love.conf(t)
 end
 
 function love.load()
-  -- if arg[#arg] == "-debug" then require("mobdebug").start() end
     love._openConsole()
-    -- Load map file ~~~~~~~~~~ remove these
-    --map = sti("newMap.lua", {"bump"})
-    --map:bump_init(world)
+
     -- Create new dynamic data layer called "Sprites" as the 8th layer
     local layer = map:addCustomLayer("Sprites", 6)
-
+    
     -- get player spawn object
     for k, object in pairs(map.objects) do
         if object.name == "Player" then
                 player_init = true
                 player = object
-                world:add(player, player.x-0, player.y-0, player.width, player.height) -- x,y,width, height
+                world:add(player, player.x, player.y, 17,16) -- x, y, width, height
             break
         end
     end
 
+    local anim = newAnimation(love.graphics.newImage("pipo-nekonin001-64.png"), 64,64 , .5)
     layer.player = {
-        animation = newAnimation(love.graphics.newImage("pipo-nekonin001.png"), 32, 32 , .5),
+        animation = anim,
         spriteNum = -1,
         px = player.x,
         py = player.y,
-        ox = 0, -- sprite:getWidth() / 2,
-        oy = 0, -- sprite:getHeight() / 1.35
+        ox = 24,
+        oy = 48,
         direction = "down",
-        prev_x = 0,
-        prev_y = 0,
+        prev_px = 0,
+        prev_py = 0,
         cameraPX = function() -- this calculates the pixel-wise x of the top-left corner of the current screen 
             return math.floor(layer.player.px - SCREEN_WIDTH/2)
         end,
@@ -70,15 +78,13 @@ function love.load()
     }
 
     layer.player.is_moving = function()
-        return not (layer.player.prev_x == layer.player.px and layer.player.prev_y == layer.player.py)
+        return not (layer.player.prev_px == layer.player.px and layer.player.prev_py == layer.player.py)
     end
         
     local playerFilter = function (item, other)
     	if other.layer.properties.collidable then return 'touch'
     	end
     end	
-
---~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     --add controls to player
     layer.update = function(self, dt) 
@@ -118,6 +124,7 @@ function love.load()
         -- draw player
         layer.draw = function(self)
            
+
             love.graphics.draw(
                 self.player.animation.spriteSheet, 
                 self.player.animation.get_frame(self.player.direction, self.player.is_moving()),
@@ -143,32 +150,50 @@ function love.load()
                     love.graphics.rectangle('line', world:getRect(v))                   
                 end
             end
-            if world:hasItem(player) and self.player.is_moving() 
-                then 
-                love.graphics.setColor(0, 255, 0)
-                love.graphics.rectangle('line', world:getRect(player))
-            end 
+            -- if world:hasItem(player) and self.player.is_moving() 
+            --     then 
+            --     love.graphics.setColor(0, 255, 0)
+            --     love.graphics.rectangle('line', world:getRect(player))
+            -- end 
             
+            --love.graphics.rectangle('line', world:getRect(math.floor(self.px), math.floor(self.py)))
+            love.graphics.setColor(0,0,255)
+            love.graphics.rectangle('line', self.player.tx()*TILE_WIDTH, self.player.ty()*TILE_HEIGHT, TILE_WIDTH,TILE_HEIGHT)
+            
+            --drawing a rect in front of our kitty
+            if self.player.direction == "left" then
+                love.graphics.setColor(255,255,0)
+                love.graphics.rectangle('line', (self.player.tx()-1)*TILE_WIDTH, self.player.ty()*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT)
+                elseif self.player.direction == "up" then 
+                    love.graphics.setColor(255,255,0) 
+                    love.graphics.rectangle('line', self.player.tx()*TILE_WIDTH, (self.player.ty()-1)*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT)
+                elseif self.player.direction == "down" then 
+                    love.graphics.setColor(255,255,0)
+                    love.graphics.rectangle('line', self.player.tx()*TILE_WIDTH, (self.player.ty()+1)*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT)
+                elseif self.player.direction == "right" then 
+                    love.graphics.setColor(255,255,0)
+                    love.graphics.rectangle('line', (self.player.tx()+1)*TILE_WIDTH, self.player.ty()*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT)
+                --love.graphics.rectangle('line', self.player.tx()*TILE_WIDTH+TILE_WIDTH, self.player.ty()*TILE_HEIGHT+TILE_HEIGHT, 32, 32)
+                     
+            end            
         end
     end
 end
 
 function love.update(dt)
-   
 
     local player = map.layers["Sprites"].player
-    player.prev_x = player.cameraPX()
-    player.prev_y = player.cameraPY()
+    player.prev_px = player.px
+    player.prev_py = player.py
 
     -- Update world
     map:update(dt)
-    
 
     local player = map.layers["Sprites"].player
 
     player.animation.currentTime = player.animation.currentTime + dt
     if player.animation.currentTime >= player.animation.duration then
-            player.animation.currentTime = player.animation.currentTime - player.animation.duration
+        player.animation.currentTime = player.animation.currentTime - player.animation.duration
     end
 end
 
@@ -180,7 +205,6 @@ function love.draw()
     map:draw(-player.cameraPX(), -player.cameraPY(), SCALE)
     
     --player coordinates
-    font = love.graphics.newFont(28)
     love.graphics.setFont(font)
     love.graphics.print("player coords: (" .. player.cameraPX() ..",".. player.cameraPY() ..")", 10, 25)
     if player.is_moving() then
@@ -192,6 +216,7 @@ function love.draw()
     love.graphics.print("drawing frame: " .. player.animation.curFrame, 10, 100)
     love.graphics.print("x coord:" .. player.tx(), 10, 125)
     love.graphics.print("y coord:" .. player.ty(), 10, 150)
+    --love.graphics.print("sprite middle" .. math.floor(player.px/2) ..math.floor(player.py/2), 10, 175)
     
 end
 
@@ -210,6 +235,9 @@ function newAnimation(image, width, height, duration)
     local animation = {}
     animation.spriteSheet = image;
     animation.quads = {}
+
+    animation.width = width
+    animation.height = height
 
     for y=0, image:getHeight() - height, height do
         for x = 0, image:getWidth() - width, width do
