@@ -47,12 +47,15 @@ function love.load()
         if object.name == "Player" then
                 player_init = true
                 player = object
-                world:add(player, player.x, player.y, 17,16) -- x, y, width, height
+                world:add(player, player.x, player.y, 16,16) -- x, y, width, height
             break
         end
     end
 
+    _G.empty_table = {}
+
     local anim = newAnimation(love.graphics.newImage("pipo-nekonin001-64.png"), 64,64 , .5)
+    
     layer.player = {
         animation = anim,
         spriteNum = -1,
@@ -115,7 +118,7 @@ function love.load()
             goalX = self.player.px + speed
             self.player.direction = "right"
         end
-
+    
         local actualX, actualY, cols, len = world:move(player, goalX, goalY, playerFilter)
 
         self.player.py = actualY
@@ -161,27 +164,24 @@ function love.load()
             love.graphics.rectangle('line', self.player.tx()*TILE_WIDTH, self.player.ty()*TILE_HEIGHT, TILE_WIDTH,TILE_HEIGHT)
             
             --drawing a rect in front of our kitty
-            if self.player.direction == "left" then
+            if self.player.direction == "down" then
+                love.graphics.setColor(255,255,0)
+                love.graphics.rectangle('line', self.player.tx()*TILE_WIDTH, (self.player.ty()+1)*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT)
+            elseif self.player.direction == "up" then 
+                love.graphics.setColor(255,255,0) 
+                love.graphics.rectangle('line', self.player.tx()*TILE_WIDTH, (self.player.ty()-1)*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT)
+            elseif self.player.direction == "left" then 
                 love.graphics.setColor(255,255,0)
                 love.graphics.rectangle('line', (self.player.tx()-1)*TILE_WIDTH, self.player.ty()*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT)
-                elseif self.player.direction == "up" then 
-                    love.graphics.setColor(255,255,0) 
-                    love.graphics.rectangle('line', self.player.tx()*TILE_WIDTH, (self.player.ty()-1)*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT)
-                elseif self.player.direction == "down" then 
-                    love.graphics.setColor(255,255,0)
-                    love.graphics.rectangle('line', self.player.tx()*TILE_WIDTH, (self.player.ty()+1)*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT)
-                elseif self.player.direction == "right" then 
-                    love.graphics.setColor(255,255,0)
-                    love.graphics.rectangle('line', (self.player.tx()+1)*TILE_WIDTH, self.player.ty()*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT)
-                --love.graphics.rectangle('line', self.player.tx()*TILE_WIDTH+TILE_WIDTH, self.player.ty()*TILE_HEIGHT+TILE_HEIGHT, 32, 32)
-                     
+            elseif self.player.direction == "right" then 
+                love.graphics.setColor(255,255,0)
+                love.graphics.rectangle('line', (self.player.tx()+1)*TILE_WIDTH, self.player.ty()*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT)
             end            
         end
     end
 end
 
 function love.update(dt)
-
     local player = map.layers["Sprites"].player
     player.prev_px = player.px
     player.prev_py = player.py
@@ -206,7 +206,7 @@ function love.draw()
     
     --player coordinates
     love.graphics.setFont(font)
-    love.graphics.print("player coords: (" .. player.cameraPX() ..",".. player.cameraPY() ..")", 10, 25)
+    love.graphics.print("camera PX (topleft pixel of screen): (" .. player.cameraPX() ..",".. player.cameraPY() ..")", 10, 25)
     if player.is_moving() then
         love.graphics.print("moving", 10, 50)
     else
@@ -218,6 +218,10 @@ function love.draw()
     love.graphics.print("y coord:" .. player.ty(), 10, 150)
     --love.graphics.print("sprite middle" .. math.floor(player.px/2) ..math.floor(player.py/2), 10, 175)
     
+    -- action button
+    if love.keyboard.isDown("e") then 
+        love.graphics.print("action", 10, 200)
+    end
 end
 
 
